@@ -20,6 +20,12 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class FrontServlet extends HttpServlet {
     Map<String, Mapping> mappingUrls = new HashMap<>();
+
+    @Override
+    public void init() throws ServletException {
+        // Initializing all of the class routes
+        mappingUrls = MappingInitializer.getAllControllerURLMethods();
+    }
     
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
