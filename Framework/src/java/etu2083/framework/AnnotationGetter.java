@@ -18,12 +18,17 @@ import java.util.List;
  * @author aris
  */
 public class AnnotationGetter {
+    // Package available
+    public static ArrayList<String> packages = new ArrayList<>();
+    
     public static List<Class<?>> getClassesWithAnnotation(Class<? extends Annotation> annotation) {
         List<Class<?>> classes = new ArrayList<>();
+        
         try {
-            for (Package pack : Package.getPackages()) {
-                for (Class<?> cls : getClassesInPackage(pack.getName())) {
+            for (String pack : packages) {
+                for (Class<?> cls : getClassesInPackage(pack)) {
                     if (cls.isAnnotationPresent(annotation)) {
+                        System.out.println(cls.getSimpleName());
                         classes.add(cls);
                     }
                 }

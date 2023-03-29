@@ -5,11 +5,9 @@
         <group>
             <file>file:/home/aris/S4-ITU/Framework-ETU2083/Framework/src/java/etu2083/framework/servlet/MappingInitializer.java</file>
             <file>file:/home/aris/S4-ITU/Framework-ETU2083/Framework/src/java/etu2083/framework/servlet/FrontServlet.java</file>
-            <file>file:/home/aris/S4-ITU/Framework-ETU2083/Framework/web/huhu.jsp</file>
-            <file>file:/home/aris/S4-ITU/Framework-ETU2083/Framework/src/java/etu2083/framework/Mapping.java</file>
-            <file>file:/home/aris/S4-ITU/Framework-ETU2083/Framework/src/java/etu2083/framework/app/controllers/TestController.java</file>
             <file>file:/home/aris/S4-ITU/Framework-ETU2083/Framework/src/java/etu2083/framework/ModelView.java</file>
             <file>file:/home/aris/S4-ITU/Framework-ETU2083/Framework/web/WEB-INF/web.xml</file>
+            <file>file:/home/aris/S4-ITU/Framework-ETU2083/Framework/src/java/etu2083/framework/AnnotationGetter.java</file>
         </group>
     </open-files>
 </project-private>

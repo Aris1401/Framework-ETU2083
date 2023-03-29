@@ -4,6 +4,7 @@
  */
 package etu2083.framework.servlet;
 
+import etu2083.framework.AnnotationGetter;
 import etu2083.framework.Mapping;
 import etu2083.framework.ModelView;
 import java.io.IOException;
@@ -29,6 +30,8 @@ public class FrontServlet extends HttpServlet {
     
     @Override
     public void init() throws ServletException {
+        AnnotationGetter.packages.add("controller");
+
         // Initializing all of the class routes
         mappingUrls = MappingInitializer.getAllControllerURLMethods();
     }
@@ -40,6 +43,7 @@ public class FrontServlet extends HttpServlet {
         
         String currentUrlwArgs = currentURL + "?" + request.getQueryString(); 
         
+        response.getWriter().println(mappingUrls.size());
         // Check si l'url existe dans l'hashmap
         if (mappingUrls.containsKey(currentURL)) {
             try {
