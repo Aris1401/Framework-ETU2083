@@ -58,6 +58,12 @@ public class FrontServlet extends HttpServlet {
                 // Invoke the method in the class
                 ModelView modelView = (ModelView) urlObjectInstance.getClass().getMethod(urlMapObject.getMethod()).invoke(urlObjectInstance);
                 
+                if (modelView.hasData()) {
+                    for (Map.Entry<String, Object> data : modelView.getData().entrySet()) {
+                        request.setAttribute(data.getKey(), data.getValue());
+                    }
+                }
+                
                 // Dispatching the results  
                 request.getRequestDispatcher(modelView.getView()).forward(request, response);
             } catch (ClassNotFoundException ex) {
