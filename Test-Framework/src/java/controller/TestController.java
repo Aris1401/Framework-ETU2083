@@ -17,6 +17,7 @@ public class TestController {
     @AppRoute(url="/test")
     public ModelView test() {
         ModelView v = new ModelView();
+        v.addItem("huhu", "Ito ny data ato izao");
         v.setView("test");
         
         return v;
