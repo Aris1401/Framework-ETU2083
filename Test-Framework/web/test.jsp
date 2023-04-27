@@ -15,7 +15,7 @@
         <h1>Hello World!</h1>
         
         <%= 
-           ((String) request.getAttribute("huhu"))
+           ((double) request.getAttribute("huhu"))
         %>
     </body>
 </html>

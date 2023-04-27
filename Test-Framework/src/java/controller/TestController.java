@@ -14,10 +14,22 @@ import etu2083.framework.ModelView;
  */
 @Controller
 public class TestController {
+    public String myVar;
+    public double huhu;
+    
     @AppRoute(url="/test")
     public ModelView test() {
         ModelView v = new ModelView();
         v.addItem("huhu", "Ito ny data ato izao");
+        v.setView("test");
+        
+        return v;
+    }
+    
+    @AppRoute(url="/huhu") 
+    public ModelView huhu() {
+        ModelView v = new ModelView();
+        v.addItem("huhu", this.huhu);
         v.setView("test");
         
         return v;

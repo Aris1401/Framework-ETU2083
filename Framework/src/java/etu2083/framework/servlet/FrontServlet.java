@@ -9,7 +9,10 @@ import etu2083.framework.Mapping;
 import etu2083.framework.ModelView;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -36,6 +39,45 @@ public class FrontServlet extends HttpServlet {
         mappingUrls = MappingInitializer.getAllControllerURLMethods();
     }
     
+    public void getParametersFromView(HttpServletRequest request, HttpServletResponse response, Object objectUrlInstance) {
+        // Getting the current parameters values
+        Map<String, String[]> currentUrlParamaters = request.getParameterMap();
+        
+        for (Map.Entry<String, String[]> urlParams : currentUrlParamaters.entrySet()) {
+            try {
+                // Checking if the object has the current parameters
+                Field currentObjectField = objectUrlInstance.getClass().getField(urlParams.getKey().trim());
+                currentObjectField.setAccessible(true);
+                
+                ArrayList<Object> paramsValue = new ArrayList<>();
+                for (String urlParamValue : urlParams.getValue()) {
+                    // Getting the values of the parameters as an object
+                    paramsValue.add((String) urlParamValue.trim());
+                }
+                
+                // If the value was an array or was a unique value 
+                if (paramsValue.size() > 1) {
+                    currentObjectField.set(objectUrlInstance, paramsValue.get(0));
+                } else {
+                    if (currentObjectField.getType() == Date.class) {
+                        currentObjectField.set(objectUrlInstance, Date.parse((String) paramsValue.get(0)));
+                    } else {
+                        currentObjectField.set(objectUrlInstance, paramsValue.get(0));
+                    }
+                }
+            } catch (NoSuchFieldException ex) {
+                // Skip ahead
+                continue;
+            } catch (SecurityException ex) {
+                Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IllegalArgumentException ex) {
+                Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IllegalAccessException ex) {
+                Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+            } 
+        }
+    }
+    
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         String currentURL = request.getRequestURI().replace(request.getContextPath(), "");   
@@ -55,17 +97,22 @@ public class FrontServlet extends HttpServlet {
                 // Instatiating the url object
                 Object urlObjectInstance = urlObject.getConstructor().newInstance();
                 
+                // Getting parameters for the object
+                getParametersFromView(request, response, urlObjectInstance);
+                
                 // Invoke the method in the class
                 ModelView modelView = (ModelView) urlObjectInstance.getClass().getMethod(urlMapObject.getMethod()).invoke(urlObjectInstance);
-                
-                if (modelView.hasData()) {
-                    for (Map.Entry<String, Object> data : modelView.getData().entrySet()) {
-                        request.setAttribute(data.getKey(), data.getValue());
+               
+                if (modelView != null) {
+                    if (modelView.hasData()) {
+                        for (Map.Entry<String, Object> data : modelView.getData().entrySet()) {
+                            request.setAttribute(data.getKey(), data.getValue());
+                        }
                     }
-                }
-                
-                // Dispatching the results  
-                request.getRequestDispatcher(modelView.getView()).forward(request, response);
+
+                    // Dispatching the results  
+                    request.getRequestDispatcher(modelView.getView()).forward(request, response);
+                } 
             } catch (ClassNotFoundException ex) {
                 Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
             } catch (NoSuchMethodException ex) {
