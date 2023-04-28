@@ -4,6 +4,7 @@
     Author     : aris
 --%>
 
+<%@page import="java.util.Date"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html>
@@ -16,6 +17,14 @@
         
         <%= 
            ((double) request.getAttribute("huhu"))
+        %>
+        
+        <%= 
+           ((String) request.getAttribute("nom"))
+        %>
+        
+        <%= 
+           ((Date) request.getAttribute("date"))
         %>
     </body>
 </html>

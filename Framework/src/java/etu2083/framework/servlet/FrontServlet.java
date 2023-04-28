@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -48,6 +49,7 @@ public class FrontServlet extends HttpServlet {
                 // Checking if the object has the current parameters
                 Field currentObjectField = objectUrlInstance.getClass().getField(urlParams.getKey().trim());
                 currentObjectField.setAccessible(true);
+                objectUrlInstance.getClass().getField(urlParams.getKey().trim()).setAccessible(true);
                 
                 ArrayList<Object> paramsValue = new ArrayList<>();
                 for (String urlParamValue : urlParams.getValue()) {

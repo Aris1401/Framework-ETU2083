@@ -7,6 +7,7 @@ package controller;
 import etu2083.framework.servlet.annotations.Controller;
 import etu2083.framework.servlet.annotations.AppRoute;
 import etu2083.framework.ModelView;
+import java.util.Date;
 
 /**
  *
@@ -16,6 +17,9 @@ import etu2083.framework.ModelView;
 public class TestController {
     public String myVar;
     public double huhu;
+    
+    public String nom;
+    public Date date;
     
     @AppRoute(url="/test")
     public ModelView test() {
@@ -30,6 +34,8 @@ public class TestController {
     public ModelView huhu() {
         ModelView v = new ModelView();
         v.addItem("huhu", this.huhu);
+        v.addItem("nom", nom);
+        v.addItem("date", date);
         v.setView("test");
         
         return v;
