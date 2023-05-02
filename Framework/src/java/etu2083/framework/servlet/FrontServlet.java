@@ -11,7 +11,11 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -40,7 +44,22 @@ public class FrontServlet extends HttpServlet {
         mappingUrls = MappingInitializer.getAllControllerURLMethods();
     }
     
-    public void getParametersFromView(HttpServletRequest request, HttpServletResponse response, Object objectUrlInstance) {
+    private Object convertToParamType(Class<?> paramType, String paramValue) throws ParseException {
+        if (paramType.equals(String.class)) {
+            return paramValue;
+        } else if (paramType.equals(Integer.class) || paramType.equals(int.class)) {
+            return Integer.parseInt(paramValue);
+        } else if (paramType.equals(Double.class) || paramType.equals(double.class)) {
+            return Double.parseDouble(paramValue);
+        } else if (paramType.equals(Date.class)) {
+            DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+            return df.parse(paramValue);
+        } else {
+            throw new IllegalArgumentException("Unsupported parameter type: " + paramType.getName());
+        }
+    }
+    
+    public void getParametersFromView(HttpServletRequest request, HttpServletResponse response, Object objectUrlInstance) throws ParseException {
         // Getting the current parameters values
         Map<String, String[]> currentUrlParamaters = request.getParameterMap();
         
@@ -51,7 +70,7 @@ public class FrontServlet extends HttpServlet {
                 currentObjectField.setAccessible(true);
                 objectUrlInstance.getClass().getField(urlParams.getKey().trim()).setAccessible(true);
                 
-                ArrayList<Object> paramsValue = new ArrayList<>();
+                ArrayList<String> paramsValue = new ArrayList<>();
                 for (String urlParamValue : urlParams.getValue()) {
                     // Getting the values of the parameters as an object
                     paramsValue.add((String) urlParamValue.trim());
@@ -61,11 +80,7 @@ public class FrontServlet extends HttpServlet {
                 if (paramsValue.size() > 1) {
                     currentObjectField.set(objectUrlInstance, paramsValue.get(0));
                 } else {
-                    if (currentObjectField.getType() == Date.class) {
-                        currentObjectField.set(objectUrlInstance, Date.parse((String) paramsValue.get(0)));
-                    } else {
-                        currentObjectField.set(objectUrlInstance, paramsValue.get(0));
-                    }
+                    currentObjectField.set(objectUrlInstance, convertToParamType(currentObjectField.getType(), paramsValue.get(0)));
                 }
             } catch (NoSuchFieldException ex) {
                 // Skip ahead
@@ -78,6 +93,37 @@ public class FrontServlet extends HttpServlet {
                 Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
             } 
         }
+    }
+    
+    Object[] getParametersForMethodFromView(HttpServletRequest request, HttpServletResponse res, Method currentUrlMethod) throws ParseException {
+        // Getting the current parameters values
+        Map<String, String[]> currentUrlParamaters = request.getParameterMap();
+        
+        // Getting the parameters
+        Parameter[] parameters = currentUrlMethod.getParameters();
+        Object[] argsArray = new Object[parameters.length];
+        
+        int parameterIndex = 0;
+        for (Parameter param : parameters) {
+            Object currentParamater = null;
+            
+            // Checking for all args
+            for (Map.Entry<String, String[]> urlParams : currentUrlParamaters.entrySet()) {
+                if (!param.getName().equals(urlParams.getKey())) {
+                    // Si un parametres n'est pas present
+                    break;
+                }
+                
+                // Si le parametre est trouvee
+                currentParamater = convertToParamType(param.getType(), urlParams.getValue()[0]);
+            }
+            
+            // Setting the args array
+            argsArray[parameterIndex] = currentParamater;
+            parameterIndex++;
+        }
+        
+        return argsArray;
     }
     
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
@@ -99,11 +145,25 @@ public class FrontServlet extends HttpServlet {
                 // Instatiating the url object
                 Object urlObjectInstance = urlObject.getConstructor().newInstance();
                 
+                
                 // Getting parameters for the object
                 getParametersFromView(request, response, urlObjectInstance);
                 
+                
+                Method currentUrlMappedMethod = null;
+                
+                Method[] methods = urlObjectInstance.getClass().getMethods();
+                for (Method method : methods) {
+                    if (method.getName().equals(urlMapObject.getMethod())) currentUrlMappedMethod = method;
+                }
+
+                if (currentUrlMappedMethod == null) return; // TODO: Changer en eception
+                
+                // Setting the parameters argumets
+                Object[] argsArray = getParametersForMethodFromView(request, response, currentUrlMappedMethod);
+                
                 // Invoke the method in the class
-                ModelView modelView = (ModelView) urlObjectInstance.getClass().getMethod(urlMapObject.getMethod()).invoke(urlObjectInstance);
+                ModelView modelView = (ModelView) currentUrlMappedMethod.invoke(urlObjectInstance, argsArray);
                
                 if (modelView != null) {
                     if (modelView.hasData()) {
@@ -128,6 +188,8 @@ public class FrontServlet extends HttpServlet {
             } catch (IllegalArgumentException ex) {
                 Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
             } catch (InvocationTargetException ex) {
+                Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (ParseException ex) {
                 Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
             }
         } else if (currentURL.contains(".jsp")){
