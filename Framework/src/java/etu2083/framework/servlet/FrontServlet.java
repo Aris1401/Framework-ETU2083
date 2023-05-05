@@ -54,6 +54,10 @@ public class FrontServlet extends HttpServlet {
         } else if (paramType.equals(Date.class)) {
             DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
             return df.parse(paramValue);
+        } else if (paramType.equals(java.sql.Date.class)) {
+            DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+            java.sql.Date date = java.sql.Date.valueOf(df.parse(paramValue).toString());
+            return date;
         } else {
             throw new IllegalArgumentException("Unsupported parameter type: " + paramType.getName());
         }
@@ -80,7 +84,7 @@ public class FrontServlet extends HttpServlet {
                 if (paramsValue.size() > 1) {
                     currentObjectField.set(objectUrlInstance, paramsValue.get(0));
                 } else {
-                    currentObjectField.set(objectUrlInstance, convertToParamType(currentObjectField.getType(), paramsValue.get(0)));
+                    currentObjectField.set(objectUrlInstance, (Object) convertToParamType(currentObjectField.getType(), paramsValue.get(0)));
                 }
             } catch (NoSuchFieldException ex) {
                 // Skip ahead

@@ -31,11 +31,13 @@ public class TestController {
     }
     
     @AppRoute(url="/huhu") 
-    public ModelView huhu() {
+    public ModelView huhu(String iii) {
         ModelView v = new ModelView();
         v.addItem("huhu", this.huhu);
-        v.addItem("nom", nom);
+        v.addItem("nom", iii);
         v.addItem("date", date);
+        v.addItem("date", date);
+
         v.setView("test");
         
         return v;
