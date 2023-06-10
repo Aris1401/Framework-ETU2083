@@ -1,0 +1,29 @@
+DOCUMENTATION
+
+Code requis dans 'web.xml':
+<servlet>
+        <servlet-name>FrontServlet</servlet-name>
+        <servlet-class>etu2083.framework.servlet.FrontServlet</servlet-class>
+</servlet>
+<servlet-mapping>
+        <servlet-name>FrontServlet</servlet-name>
+        <url-pattern>/</url-pattern>
+</servlet-mapping>
+<session-config>
+        <session-timeout>
+            30
+        </session-timeout>
+</session-config>
+
+Utilisation:
+-> Tout les models/Controllers doivent etre annotee avec l'annotation 'Controller' et doivent etre mises dans un package 'controller'
+-> Chaque fonction peut avoir une url specifiee qui mene a l'execution de cette fonction sur cet url
+Annotee:
+@AppRoute(url=)
+avec l'url comme parametre
+->Une fonction peut retournee un objet de type 'ModelView'
+	Fonction:
+		setView(String view) 
+		 Permet d'afficher une page jsp a l'appel
+		addItem(String value, Object key)
+		 Permet d'ajouter des valeurs a afficher dans la page jsp

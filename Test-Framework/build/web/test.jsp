@@ -4,6 +4,8 @@
     Author     : aris
 --%>
 
+<%@page import="java.util.Arrays"%>
+<%@page import="java.util.Date"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html>
@@ -15,7 +17,19 @@
         <h1>Hello World!</h1>
         
         <%= 
-           ((String) request.getAttribute("huhu"))
+           ((double) request.getAttribute("huhu"))
+        %>
+        
+        <%= 
+           ((String) request.getAttribute("nom"))
+        %>
+        
+        <%= 
+           ((Date) request.getAttribute("date"))
+        %>
+        
+        <%= 
+            Arrays.toString((String[]) request.getAttribute("haha"))
         %>
     </body>
 </html>
