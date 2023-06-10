@@ -5,10 +5,13 @@
 package etu2083.framework.servlet;
 
 import etu2083.framework.AnnotationGetter;
+import etu2083.framework.ConverterExtension;
 import etu2083.framework.Mapping;
 import etu2083.framework.ModelView;
+import etu2083.framework.servlet.annotations.ParamName;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -17,13 +20,13 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.servlet.FilterChain;
-import javax.servlet.RequestDispatcher;
+import javax.faces.convert.ConverterException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -44,47 +47,39 @@ public class FrontServlet extends HttpServlet {
         mappingUrls = MappingInitializer.getAllControllerURLMethods();
     }
     
-    private Object convertToParamType(Class<?> paramType, String paramValue) throws ParseException {
-        if (paramType.equals(String.class)) {
-            return paramValue;
-        } else if (paramType.equals(Integer.class) || paramType.equals(int.class)) {
-            return Integer.parseInt(paramValue);
-        } else if (paramType.equals(Double.class) || paramType.equals(double.class)) {
-            return Double.parseDouble(paramValue);
-        } else if (paramType.equals(Date.class)) {
-            DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-            return df.parse(paramValue);
-        } else if (paramType.equals(java.sql.Date.class)) {
-            DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-            java.sql.Date date = java.sql.Date.valueOf(df.parse(paramValue).toString());
-            return date;
-        } else {
-            throw new IllegalArgumentException("Unsupported parameter type: " + paramType.getName());
-        }
-    }
-    
     public void getParametersFromView(HttpServletRequest request, HttpServletResponse response, Object objectUrlInstance) throws ParseException {
         // Getting the current parameters values
         Map<String, String[]> currentUrlParamaters = request.getParameterMap();
         
         for (Map.Entry<String, String[]> urlParams : currentUrlParamaters.entrySet()) {
             try {
-                // Checking if the object has the current parameters
+                // Checking if the object has the current parameter
                 Field currentObjectField = objectUrlInstance.getClass().getField(urlParams.getKey().trim());
                 currentObjectField.setAccessible(true);
-                objectUrlInstance.getClass().getField(urlParams.getKey().trim()).setAccessible(true);
-                
-                ArrayList<String> paramsValue = new ArrayList<>();
+
+                ArrayList<String> paramValues = new ArrayList<>();
                 for (String urlParamValue : urlParams.getValue()) {
                     // Getting the values of the parameters as an object
-                    paramsValue.add((String) urlParamValue.trim());
+                    paramValues.add(urlParamValue.trim());
                 }
-                
-                // If the value was an array or was a unique value 
-                if (paramsValue.size() > 1) {
-                    currentObjectField.set(objectUrlInstance, paramsValue.get(0));
+
+                Class<?> fieldType = currentObjectField.getType();
+                if (fieldType.isArray()) {
+                    // Handle array field type
+                    Class<?> componentType = fieldType.getComponentType();
+                    Object arrayParam = Array.newInstance(componentType, paramValues.size());
+
+                    for (int i = 0; i < paramValues.size(); i++) {
+                        Object convertedValue = ConverterExtension.ConvertStringToType(componentType, paramValues.get(i));
+                        Array.set(arrayParam, i, convertedValue);
+                    }
+
+                    currentObjectField.set(objectUrlInstance, arrayParam);
                 } else {
-                    currentObjectField.set(objectUrlInstance, (Object) convertToParamType(currentObjectField.getType(), paramsValue.get(0)));
+                    // Handle non-array field type
+                    String paramValue = paramValues.get(0);
+                    Object convertedValue = ConverterExtension.ConvertStringToType(fieldType, paramValue);
+                    currentObjectField.set(objectUrlInstance, convertedValue);
                 }
             } catch (NoSuchFieldException ex) {
                 // Skip ahead
@@ -95,7 +90,7 @@ public class FrontServlet extends HttpServlet {
                 Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IllegalAccessException ex) {
                 Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
-            } 
+            }
         }
     }
     
@@ -109,23 +104,41 @@ public class FrontServlet extends HttpServlet {
         
         int parameterIndex = 0;
         for (Parameter param : parameters) {
-            Object currentParamater = null;
-            
-            // Checking for all args
-            for (Map.Entry<String, String[]> urlParams : currentUrlParamaters.entrySet()) {
-                if (!param.getName().equals(urlParams.getKey())) {
-                    // Si un parametres n'est pas present
-                    break;
+            ParamName paramName = param.getAnnotation(ParamName.class);
+            Object currentParameter = null;
+
+            if (paramName != null) {
+                String paramNameString = paramName.name();
+                String[] paramValues = currentUrlParamaters.get(paramNameString);
+
+                if (paramValues != null && paramValues.length > 0) {
+                    Class<?> paramType = param.getType();
+
+                    if (paramType.isArray()) {
+                        // Handle array parameter type
+                        Class<?> componentType = paramType.getComponentType();
+                        Object arrayParam = Array.newInstance(componentType, paramValues.length);
+
+                        for (int i = 0; i < paramValues.length; i++) {
+                            Object convertedValue = ConverterExtension.ConvertStringToType(componentType, paramValues[i]);
+                            Array.set(arrayParam, i, convertedValue);
+                        }
+
+                        currentParameter = arrayParam;
+                    } else {
+                        // Handle non-array parameter type
+                        String paramValue = paramValues[0];
+                        currentParameter = ConverterExtension.ConvertStringToType(paramType, paramValue);
+                    }
                 }
-                
-                // Si le parametre est trouvee
-                currentParamater = convertToParamType(param.getType(), urlParams.getValue()[0]);
             }
-            
+
             // Setting the args array
-            argsArray[parameterIndex] = currentParamater;
+            argsArray[parameterIndex] = currentParameter;
             parameterIndex++;
         }
+        
+        System.out.println(Arrays.toString(argsArray));
         
         return argsArray;
     }
@@ -152,16 +165,17 @@ public class FrontServlet extends HttpServlet {
                 
                 // Getting parameters for the object
                 getParametersFromView(request, response, urlObjectInstance);
-                
-                
                 Method currentUrlMappedMethod = null;
                 
                 Method[] methods = urlObjectInstance.getClass().getMethods();
                 for (Method method : methods) {
-                    if (method.getName().equals(urlMapObject.getMethod())) currentUrlMappedMethod = method;
+                    if (method.getName().equals(urlMapObject.getMethod())) {
+                        currentUrlMappedMethod = method;
+                        break;
+                    }
                 }
 
-                if (currentUrlMappedMethod == null) return; // TODO: Changer en eception
+                if (currentUrlMappedMethod == null) return; // TODO: Changer en exception
                 
                 // Setting the parameters argumets
                 Object[] argsArray = getParametersForMethodFromView(request, response, currentUrlMappedMethod);
@@ -178,29 +192,17 @@ public class FrontServlet extends HttpServlet {
 
                     // Dispatching the results  
                     request.getRequestDispatcher(modelView.getView()).forward(request, response);
-                } 
-            } catch (ClassNotFoundException ex) {
-                Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (NoSuchMethodException ex) {
-                Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (SecurityException ex) {
-                Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (InstantiationException ex) {
-                Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (IllegalAccessException ex) {
-                Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (IllegalArgumentException ex) {
-                Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (InvocationTargetException ex) {
-                Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (ParseException ex) {
-                Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
-            }
+                } else {
+                    response.getWriter().println("An Error Occured");
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            } 
         } else if (currentURL.contains(".jsp")){
             response.getWriter().println("Access Denied");
             return;
         } else {
-            
+            response.getWriter().println("URL Not Found");
         }
     }
 

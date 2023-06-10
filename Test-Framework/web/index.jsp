@@ -13,8 +13,12 @@
     </head>
     <body>
         <form action="huhu" method="POST">
-            <input type="text" name="nom">
-            <input type="date" value="date">
+            <input type="text" name="iii">
+            <input type="date" name="date">
+            
+            <input type="checkbox" name="haha[]" value="1">
+            <input type="checkbox" name="haha[]" value="2">
+            <input type="checkbox" name="haha[]" value="3">
             
             <input type="submit" value="Valider">
         </form>

@@ -7,6 +7,7 @@ package controller;
 import etu2083.framework.servlet.annotations.Controller;
 import etu2083.framework.servlet.annotations.AppRoute;
 import etu2083.framework.ModelView;
+import etu2083.framework.servlet.annotations.ParamName;
 import java.util.Date;
 
 /**
@@ -31,12 +32,12 @@ public class TestController {
     }
     
     @AppRoute(url="/huhu") 
-    public ModelView huhu(String iii) {
+    public ModelView huhu(@ParamName(name="iii") String iii,@ParamName(name="haha[]") String[] haha) {
         ModelView v = new ModelView();
         v.addItem("huhu", this.huhu);
         v.addItem("nom", iii);
         v.addItem("date", date);
-        v.addItem("date", date);
+        v.addItem("haha", haha);
 
         v.setView("test");
         
