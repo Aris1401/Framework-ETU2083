@@ -38,6 +38,7 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class FrontServlet extends HttpServlet {
     Map<String, Mapping> mappingUrls = new HashMap<>();
+    Map<Class<?>, Object> autoloads = new HashMap<>();
     
     @Override
     public void init() throws ServletException {
@@ -45,6 +46,26 @@ public class FrontServlet extends HttpServlet {
 
         // Initializing all of the class routes
         mappingUrls = MappingInitializer.getAllControllerURLMethods();
+        
+        try {
+            // Initializing autoloads
+            autoloads = MappingInitializer.getAllAutoloadsClasses();
+            
+            System.out.println(autoloads);
+            System.out.println(mappingUrls);
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (NoSuchMethodException ex) {
+            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IllegalArgumentException ex) {
+            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InvocationTargetException ex) {
+            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     
     public void getParametersFromView(HttpServletRequest request, HttpServletResponse response, Object objectUrlInstance) throws ParseException {
@@ -143,6 +164,50 @@ public class FrontServlet extends HttpServlet {
         return argsArray;
     }
     
+    public Object checkAutoloads(Class<?> classType) throws IllegalAccessException {
+        if (autoloads.containsKey(classType)) {
+            Object containedObject = autoloads.get(classType);
+            resetObject(containedObject);
+            
+            return containedObject;
+        }
+        
+        return null;
+    }
+    
+    public static void resetObject(Object object) throws IllegalAccessException {
+        Class<?> clazz = object.getClass();
+        Field[] fields = clazz.getDeclaredFields();
+
+        for (Field field : fields) {
+            field.setAccessible(true); 
+
+            if (field.getType().isPrimitive()) setPrimitiveValue(field, object);
+            else field.set(object, null);
+        }
+    }
+    
+    private static void setPrimitiveValue(Field field, Object object) throws IllegalAccessException {
+        Class<?> type = field.getType();
+        if (type == boolean.class) {
+            field.setBoolean(object, false);
+        } else if (type == byte.class) {
+            field.setByte(object, (byte) 0);
+        } else if (type == short.class) {
+            field.setShort(object, (short) 0);
+        } else if (type == int.class) {
+            field.setInt(object, 0);
+        } else if (type == long.class) {
+            field.setLong(object, 0L);
+        } else if (type == float.class) {
+            field.setFloat(object, 0.0f);
+        } else if (type == double.class) {
+            field.setDouble(object, 0.0);
+        } else if (type == char.class) {
+            field.setChar(object, '\u0000');
+        }
+    }
+    
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         String currentURL = request.getRequestURI().replace(request.getContextPath(), "");   
@@ -160,8 +225,8 @@ public class FrontServlet extends HttpServlet {
                 Class<?> urlObject = Class.forName(urlMapObject.getClassName());
                 
                 // Instatiating the url object
-                Object urlObjectInstance = urlObject.getConstructor().newInstance();
-                
+                Object urlObjectInstance = checkAutoloads(urlObject);
+                if (urlObjectInstance == null) urlObjectInstance = urlObject.getConstructor().newInstance();
                 
                 // Getting parameters for the object
                 getParametersFromView(request, response, urlObjectInstance);

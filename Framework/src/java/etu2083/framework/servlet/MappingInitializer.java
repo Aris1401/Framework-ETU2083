@@ -8,6 +8,8 @@ import etu2083.framework.Mapping;
 import etu2083.framework.servlet.annotations.Controller;
 import etu2083.framework.AnnotationGetter;
 import etu2083.framework.servlet.annotations.AppRoute;
+import etu2083.framework.servlet.annotations.Scope;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,5 +52,28 @@ public class MappingInitializer {
         }
          
         return urlMapping;
+    }
+    
+    public static Map<Class<?>, Object> getAllAutoloadsClasses() throws ClassNotFoundException, NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, IllegalArgumentException, InvocationTargetException{
+        List<Class<?>> controllers = AnnotationGetter.getClassesWithAnnotation(Controller.class);
+        
+        // Creating Hash Map containing the url to the controller method and the mapping class
+        Map<Class<?>, Object> autoloads = new HashMap<>();
+        
+        // Looping through all the classes annotated with the annotation controller
+        for (Class<?> controller : controllers) {
+            if (controller.isAnnotationPresent(Scope.class)) {
+                Scope scope = controller.getAnnotation(Scope.class);
+                if (scope.type() != Scope.ScopeType.SINGLETON) continue;
+                
+                // Si le scope annotation est present 
+                Class<?> classTypeInstance = Class.forName(controller.getName());
+                Object classInstance = classTypeInstance.getConstructor().newInstance();
+                
+                autoloads.put(classTypeInstance, classInstance);
+            }
+        }
+         
+        return autoloads;
     }
 }
