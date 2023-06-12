@@ -8,6 +8,8 @@ import etu2083.framework.servlet.annotations.Controller;
 import etu2083.framework.servlet.annotations.AppRoute;
 import etu2083.framework.ModelView;
 import etu2083.framework.servlet.annotations.ParamName;
+import etu2083.framework.servlet.annotations.Scope;
+
 import java.util.Date;
 
 /**
@@ -15,9 +17,10 @@ import java.util.Date;
  * @author aris
  */
 @Controller
+@Scope(type=Scope.ScopeType.SINGLETON)
 public class TestController {
     public String myVar;
-    public double huhu;
+    public double huhu = 0;
     
     public String nom;
     public Date date;
@@ -33,6 +36,8 @@ public class TestController {
     
     @AppRoute(url="/huhu") 
     public ModelView huhu(@ParamName(name="iii") String iii,@ParamName(name="haha[]") String[] haha) {
+        this.huhu++;
+        
         ModelView v = new ModelView();
         v.addItem("huhu", this.huhu);
         v.addItem("nom", iii);
