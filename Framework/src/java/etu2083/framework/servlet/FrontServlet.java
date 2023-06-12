@@ -8,6 +8,7 @@ import etu2083.framework.AnnotationGetter;
 import etu2083.framework.ConverterExtension;
 import etu2083.framework.Mapping;
 import etu2083.framework.ModelView;
+import etu2083.framework.servlet.annotations.Auth;
 import etu2083.framework.servlet.annotations.ParamName;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -40,6 +41,9 @@ public class FrontServlet extends HttpServlet {
     Map<String, Mapping> mappingUrls = new HashMap<>();
     Map<Class<?>, Object> autoloads = new HashMap<>();
     
+    boolean authSessionInitialized = false;
+    String isConnectedSessionName, connectedProfileSessionName;
+    
     @Override
     public void init() throws ServletException {
         AnnotationGetter.packages.add("controller");
@@ -68,7 +72,19 @@ public class FrontServlet extends HttpServlet {
         }
     }
     
+    void InitializeAuthSessions(HttpServletRequest request) {
+        // Intilializing is connected
+        isConnectedSessionName = getServletContext().getInitParameter("isConnectedSessionName");
+        request.getSession().setAttribute(isConnectedSessionName, false);
+        
+        // Initializing profile
+        connectedProfileSessionName = getServletContext().getInitParameter("ConnectedProfileSessionName");
+        request.getSession().setAttribute(connectedProfileSessionName, null);
+    }
+    
     public void getParametersFromView(HttpServletRequest request, HttpServletResponse response, Object objectUrlInstance) throws ParseException {
+        if (!authSessionInitialized) InitializeAuthSessions(request);
+        
         // Getting the current parameters values
         Map<String, String[]> currentUrlParamaters = request.getParameterMap();
         
@@ -208,6 +224,22 @@ public class FrontServlet extends HttpServlet {
         }
     }
     
+    private boolean CheckAuthFunction(HttpServletRequest request, Method calledMethod)  {
+        // Checking if it has an auth annotation
+        if (!calledMethod.isAnnotationPresent(Auth.class)) return false;
+        
+        // Checking if the current client is connected
+        if (request.getSession().getAttribute(isConnectedSessionName) == null) return false;
+        if (((boolean) request.getSession().getAttribute(isConnectedSessionName)) == false) return false;
+        
+        Auth authInstance = calledMethod.getAnnotation(Auth.class);
+        String profileSessionValue = (String) request.getSession().getAttribute(connectedProfileSessionName);
+        
+        if (!authInstance.profil().equals(profileSessionValue)) return false;
+        
+        return true;
+    }
+    
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         String currentURL = request.getRequestURI().replace(request.getContextPath(), "");   
@@ -245,13 +277,24 @@ public class FrontServlet extends HttpServlet {
                 // Setting the parameters argumets
                 Object[] argsArray = getParametersForMethodFromView(request, response, currentUrlMappedMethod);
                 
+                // Check si le client est courament connecte
+                if (!CheckAuthFunction(request, currentUrlMappedMethod)) throw new Exception("Acces Denied: Not Authentified");
+                
                 // Invoke the method in the class
                 ModelView modelView = (ModelView) currentUrlMappedMethod.invoke(urlObjectInstance, argsArray);
                
                 if (modelView != null) {
+                    // Setting attributes
                     if (modelView.hasData()) {
                         for (Map.Entry<String, Object> data : modelView.getData().entrySet()) {
                             request.setAttribute(data.getKey(), data.getValue());
+                        }
+                    }
+                    
+                    // Setting sessions
+                    if (modelView.hasSessions()) {
+                        for (Map.Entry<String,Object> session : modelView.getSession().entrySet()) {
+                            request.getSession().setAttribute(session.getKey(), session.getValue());
                         }
                     }
 

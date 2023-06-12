@@ -14,6 +14,7 @@ import java.util.Map;
 public class ModelView {
     private String view;
     private Map<String, Object> data;
+    private Map<String, Object> session;
 
     public String getView() {
         return view + ".jsp";
@@ -35,5 +36,18 @@ public class ModelView {
     
     public Map<String, Object> getData() {
         return this.data;
+    }
+    
+    public <T> void addSession(String name, T value) {
+        if (session == null) session = new HashMap<>();
+        session.put(name, value);
+    }
+    
+    public boolean hasSessions() {
+        return session != null;
+    }
+    
+    public Map<String, Object> getSession() {
+        return this.session;
     }
 }

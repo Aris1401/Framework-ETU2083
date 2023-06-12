@@ -13,4 +13,13 @@
             30
         </session-timeout>
     </session-config>
+    
+    <context-param>
+        <param-name>isConnectedSessionName</param-name>
+        <param-value>isConnected</param-value>
+    </context-param>
+    <context-param>
+        <param-name>ConnectedProfileSessionName</param-name>
+        <param-value>connectedProfil</param-value>
+    </context-param>
 </web-app>
