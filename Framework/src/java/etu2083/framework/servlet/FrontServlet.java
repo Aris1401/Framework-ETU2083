@@ -42,7 +42,6 @@ public class FrontServlet extends HttpServlet {
     Map<Class<?>, Object> autoloads = new HashMap<>();
     
     boolean authSessionInitialized = false;
-    String isConnectedSessionName, connectedProfileSessionName;
     
     @Override
     public void init() throws ServletException {
@@ -74,11 +73,11 @@ public class FrontServlet extends HttpServlet {
     
     void InitializeAuthSessions(HttpServletRequest request) {
         // Intilializing is connected
-        isConnectedSessionName = getServletContext().getInitParameter("isConnectedSessionName");
+        String isConnectedSessionName = getServletContext().getInitParameter("isConnectedSessionName");
         request.getSession().setAttribute(isConnectedSessionName, false);
         
         // Initializing profile
-        connectedProfileSessionName = getServletContext().getInitParameter("ConnectedProfileSessionName");
+        String connectedProfileSessionName = getServletContext().getInitParameter("ConnectedProfileSessionName");
         request.getSession().setAttribute(connectedProfileSessionName, null);
     }
     
@@ -225,6 +224,9 @@ public class FrontServlet extends HttpServlet {
     }
     
     private boolean CheckAuthFunction(HttpServletRequest request, Method calledMethod)  {
+        String isConnectedSessionName = getServletContext().getInitParameter("isConnectedSessionName");
+        String connectedProfileSessionName = getServletContext().getInitParameter("ConnectedProfileSessionName");
+        
         // Checking if it has an auth annotation
         if (!calledMethod.isAnnotationPresent(Auth.class)) return false;
         
@@ -240,8 +242,7 @@ public class FrontServlet extends HttpServlet {
         return true;
     }
     
-    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    protected void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String currentURL = request.getRequestURI().replace(request.getContextPath(), "");   
         response.getWriter().println(currentURL);
         
