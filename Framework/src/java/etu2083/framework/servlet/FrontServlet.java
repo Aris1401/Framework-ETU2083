@@ -6,10 +6,13 @@ package etu2083.framework.servlet;
 
 import etu2083.framework.AnnotationGetter;
 import etu2083.framework.ConverterExtension;
+import etu2083.framework.FileUpload;
 import etu2083.framework.Mapping;
 import etu2083.framework.ModelView;
 import etu2083.framework.servlet.annotations.ParamName;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -28,14 +31,17 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.faces.convert.ConverterException;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
 
 /**
  *
  * @author aris
  */
+@MultipartConfig()
 public class FrontServlet extends HttpServlet {
     Map<String, Mapping> mappingUrls = new HashMap<>();
     
@@ -76,10 +82,21 @@ public class FrontServlet extends HttpServlet {
 
                     currentObjectField.set(objectUrlInstance, arrayParam);
                 } else {
-                    // Handle non-array field type
-                    String paramValue = paramValues.get(0);
-                    Object convertedValue = ConverterExtension.ConvertStringToType(fieldType, paramValue);
-                    currentObjectField.set(objectUrlInstance, convertedValue);
+                    if (fieldType == FileUpload.class) {
+                        Part part = request.getPart(currentObjectField.getName());
+                        
+                        FileUpload f = new FileUpload();
+                        f.setName(part.getSubmittedFileName());
+                        f.setFileBytes(getBytesFromInputStream(part.getInputStream()));
+                        
+                        currentObjectField.set(objectUrlInstance, f);
+                    } else {
+                        // Handle non-array field type
+                        String paramValue = paramValues.get(0);
+                        Object convertedValue = ConverterExtension.ConvertStringToType(fieldType, paramValue);
+                        currentObjectField.set(objectUrlInstance, convertedValue);
+                    }
+                    
                 }
             } catch (NoSuchFieldException ex) {
                 // Skip ahead
@@ -90,8 +107,22 @@ public class FrontServlet extends HttpServlet {
                 Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IllegalAccessException ex) {
                 Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException ex) {
+                Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (ServletException ex) {
+                Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+    }
+    
+    private byte[] getBytesFromInputStream(InputStream inputStream) throws IOException {
+        byte[] buffer = new byte[8192];
+        int bytesRead;
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        while ((bytesRead = inputStream.read(buffer)) != -1) {
+            output.write(buffer, 0, bytesRead);
+        }
+        return output.toByteArray();
     }
     
     Object[] getParametersForMethodFromView(HttpServletRequest request, HttpServletResponse res, Method currentUrlMethod) throws ParseException {
