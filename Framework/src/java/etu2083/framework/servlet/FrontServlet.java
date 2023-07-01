@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -381,15 +382,28 @@ public class FrontServlet extends HttpServlet {
                         }
                     }
                     
-                    // Setting sessions
-                    if (modelView.hasSessions()) {
-                        request.getSession().setMaxInactiveInterval(1800);
+                    if (modelView.doesInvalidate()) {
+                        request.getSession().invalidate();
+                    } else {
+                        // Setting sessions
+                        if (modelView.hasSessions()) {
+                            request.getSession().setMaxInactiveInterval(1800);
+
+                            for (Map.Entry<String,Object> session : modelView.getSession().entrySet()) {
+                                System.out.println("Session:" + session.getKey() + "| Value: " + session.getValue());
+                                request.getSession().setAttribute(session.getKey(), session.getValue());
+
+                                System.out.println("-------------Session Name VAlue:" + session.getKey() + "| Value: " + request.getSession().getAttribute((String) session.getKey()));
+                            }
+                        }
+                    }
+                    
+                    // Destroying sessions
+                    if (modelView.haveSessionsToRemove()) {
+                        List<String> sessionToRemove = modelView.getSessionsToInvalidate();
                         
-                        for (Map.Entry<String,Object> session : modelView.getSession().entrySet()) {
-                            System.out.println("Session:" + session.getKey() + "| Value: " + session.getValue());
-                            request.getSession().setAttribute(session.getKey(), session.getValue());
-                            
-                            System.out.println("-------------Session Name VAlue:" + session.getKey() + "| Value: " + request.getSession().getAttribute((String) session.getKey()));
+                        for (String sessionName : sessionToRemove) {
+                            request.getSession().removeAttribute(sessionName);
                         }
                     }
 

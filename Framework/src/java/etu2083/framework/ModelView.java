@@ -5,7 +5,9 @@
 package etu2083.framework;
 
 import com.google.gson.Gson;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,6 +21,10 @@ public class ModelView {
     
     // Json propreties
     private boolean isJson = false;
+    
+    // More session propreties
+    private boolean invalidate = false;
+    private List<String> sessionsToRemove;
 
     public String getView() {
         return view + ".jsp";
@@ -73,5 +79,35 @@ public class ModelView {
     public String getJsonData() {
         Gson gson = new Gson();
         return gson.toJson(data);
+    }
+    
+    // More session methods
+    public boolean doesInvalidate() {
+        return this.invalidate;
+    }
+    
+    public void toggleInvalidate() {
+        this.invalidate = !this.invalidate;
+    }
+    
+    public void setInvalidate(boolean value) {
+        this.invalidate = value;
+    }
+    
+    public boolean haveSessionsToRemove() {
+        if (this.sessionsToRemove == null) return false;
+        
+        if (this.sessionsToRemove.size() > 0) return true;
+        
+        return false;
+    }
+    
+    public List<String> getSessionsToInvalidate() {
+        return this.sessionsToRemove;
+    }
+    
+    public void removeSession(String sessionName) {
+        if (this.sessionsToRemove == null) this.sessionsToRemove = new ArrayList<>();
+        this.sessionsToRemove.add(sessionName);
     }
 }
