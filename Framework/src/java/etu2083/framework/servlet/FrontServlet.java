@@ -6,10 +6,12 @@ package etu2083.framework.servlet;
 
 import etu2083.framework.AnnotationGetter;
 import etu2083.framework.ConverterExtension;
+import etu2083.framework.HttpSessionExtension;
 import etu2083.framework.Mapping;
 import etu2083.framework.ModelView;
 import etu2083.framework.servlet.annotations.Auth;
 import etu2083.framework.servlet.annotations.ParamName;
+import etu2083.framework.servlet.annotations.Session;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Array;
@@ -17,6 +19,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.Type;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -248,6 +251,33 @@ public class FrontServlet extends HttpServlet {
         return true;
     }
     
+    private boolean CheckForSessionCall(HttpServletRequest request, Method calledMethod, Object instancedObject) {
+        Field[] objectFields = instancedObject.getClass().getDeclaredFields();
+        for (int i = 0; i < objectFields.length; i++) {
+            String fieldName = objectFields[i].getName();
+            
+            // Recherche d'un attribut nomme field
+            if (fieldName.equals("session")) {
+                // Comparer au type qu'il faut
+                
+                if (objectFields[i].getType() != HashMap.class) return false;
+                
+                objectFields[i].setAccessible(true);
+                try {
+                    objectFields[i].set(instancedObject, HttpSessionExtension.AllSessions(request));
+                } catch (IllegalArgumentException ex) {
+                    Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (IllegalAccessException ex) {
+                    Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                
+                return true;
+            }
+        }
+        
+        return false;
+    } 
+    
     protected void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String currentURL = request.getRequestURI().replace(request.getContextPath(), "");   
         response.getWriter().println(currentURL);
@@ -290,6 +320,15 @@ public class FrontServlet extends HttpServlet {
                     return;
                 }
             
+                // Checking if the session needs session
+                if (currentUrlMappedMethod.isAnnotationPresent(Session.class)) {
+                    boolean actionResults = CheckForSessionCall(request, currentUrlMappedMethod, urlObjectInstance);
+                    
+                    if (!actionResults) {
+                        response.getWriter().println("Session call initialized incorrectly");
+                        return;
+                    }
+                }
                 
                 // Invoke the method in the class
                 ModelView modelView = (ModelView) currentUrlMappedMethod.invoke(urlObjectInstance, argsArray);

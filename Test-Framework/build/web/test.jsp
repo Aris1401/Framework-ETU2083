@@ -15,21 +15,8 @@
     </head>
     <body>
         <h1>Hello World!</h1>
-        
-        <%= 
-           ((double) request.getAttribute("huhu"))
-        %>
-        
         <%= 
            ((String) request.getAttribute("nom"))
-        %>
-        
-        <%= 
-           ((Date) request.getAttribute("date"))
-        %>
-        
-        <%= 
-            Arrays.toString((String[]) request.getAttribute("haha"))
         %>
     </body>
 </html>

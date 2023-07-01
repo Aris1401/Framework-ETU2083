@@ -10,8 +10,10 @@ import etu2083.framework.ModelView;
 import etu2083.framework.servlet.annotations.Auth;
 import etu2083.framework.servlet.annotations.ParamName;
 import etu2083.framework.servlet.annotations.Scope;
+import etu2083.framework.servlet.annotations.Session;
 
 import java.util.Date;
+import java.util.HashMap;
 
 /**
  *
@@ -25,6 +27,8 @@ public class TestController {
     public String nom;
     public String pass;
     public Date date;
+    
+    String session;
     
     @AppRoute(url="/login")
     public ModelView test() {
@@ -47,6 +51,18 @@ public class TestController {
         v.addItem("nom", iii);
         v.addItem("date", date);
         v.addItem("haha", haha);
+
+        v.setView("test");
+        
+        return v;
+    }
+    
+    @Session
+    @AppRoute(url = "/testSession")
+    public ModelView needSession() {
+        ModelView v = new ModelView();
+        
+        
 
         v.setView("test");
         
