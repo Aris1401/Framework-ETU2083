@@ -4,6 +4,7 @@
  */
 package etu2083.framework.servlet;
 
+import com.google.gson.Gson;
 import etu2083.framework.AnnotationGetter;
 import etu2083.framework.ConverterExtension;
 import etu2083.framework.HttpSessionExtension;
@@ -11,6 +12,7 @@ import etu2083.framework.Mapping;
 import etu2083.framework.ModelView;
 import etu2083.framework.servlet.annotations.Auth;
 import etu2083.framework.servlet.annotations.ParamName;
+import etu2083.framework.servlet.annotations.RestAPI;
 import etu2083.framework.servlet.annotations.Session;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -278,6 +280,26 @@ public class FrontServlet extends HttpServlet {
         return false;
     } 
     
+    // Checking method if a rest API
+    public String getJSONFrom(Method method, Object calledObject, Object[] methodArguments) {
+        String jsonData = null;
+        
+        try {
+            Object returnedValues = method.invoke(calledObject, methodArguments);
+            
+            Gson gson = new Gson();
+            jsonData = gson.toJson(returnedValues);
+        } catch (IllegalAccessException ex) {
+            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IllegalArgumentException ex) {
+            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InvocationTargetException ex) {
+            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return jsonData;
+    }
+    
     protected void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String currentURL = request.getRequestURI().replace(request.getContextPath(), "");   
 //        response.getWriter().println(currentURL);
@@ -328,6 +350,15 @@ public class FrontServlet extends HttpServlet {
                         response.getWriter().println("Session call initialized incorrectly");
                         return;
                     }
+                }
+                
+                // Checking if the rest API annotation is there
+                if (currentUrlMappedMethod.isAnnotationPresent(RestAPI.class)) {
+                    String jsonData = getJSONFrom(currentUrlMappedMethod, urlObjectInstance, argsArray);
+                    response.getWriter().println(jsonData);
+                    
+                    // Stopping normal execution
+                    return;
                 }
                 
                 // Invoke the method in the class
