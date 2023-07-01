@@ -82,7 +82,10 @@ public class FrontServlet extends HttpServlet {
     }
     
     public void getParametersFromView(HttpServletRequest request, HttpServletResponse response, Object objectUrlInstance) throws ParseException {
-        if (!authSessionInitialized) InitializeAuthSessions(request);
+        if (!authSessionInitialized) {
+            InitializeAuthSessions(request);
+            authSessionInitialized = true;
+        }
         
         // Getting the current parameters values
         Map<String, String[]> currentUrlParamaters = request.getParameterMap();

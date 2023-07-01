@@ -32,12 +32,12 @@ public class TestController {
         v.addItem("huhu", "Ito ny data ato izao");
 //        v.setView("test");
         v.addSession("isConnected", true);
-        v.addSession("connectedProfil", "admin");
+        v.addSession("connectedProfil", "momo");
         
         return v;
     }
     
-    @Auth()
+    @Auth(profil = "momo")
     @AppRoute(url="/huhu") 
     public ModelView huhu(@ParamName(name="iii") String iii,@ParamName(name="haha[]") String[] haha) {
         this.huhu++;
