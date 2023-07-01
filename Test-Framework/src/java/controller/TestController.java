@@ -9,6 +9,7 @@ import etu2083.framework.servlet.annotations.AppRoute;
 import etu2083.framework.ModelView;
 import etu2083.framework.servlet.annotations.Auth;
 import etu2083.framework.servlet.annotations.ParamName;
+import etu2083.framework.servlet.annotations.RestAPI;
 import etu2083.framework.servlet.annotations.Scope;
 import etu2083.framework.servlet.annotations.Session;
 
@@ -55,15 +56,13 @@ public class TestController {
         return v;
     }
     
+    @RestAPI
     @AppRoute(url = "/testSession")
-    public ModelView needSession() {
-        ModelView v = new ModelView();
+    public Emp[] needSession(@ParamName(name = "huhu") int huhuh) {
+        Emp[] e = new Emp[2];
+        e[0] = new Emp("hha");
+        e[1] = new Emp("hhh");
         
-        v.addItem("nom", "haha");
-        v.addItem("nom2", "hahahu");
-        
-        v.toggleIsJson();
-        
-        return v;
+        return e;
     }
 }
