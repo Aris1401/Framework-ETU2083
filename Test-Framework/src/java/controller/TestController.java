@@ -28,8 +28,6 @@ public class TestController {
     public String pass;
     public Date date;
     
-    String session;
-    
     @AppRoute(url="/login")
     public ModelView test() {
         ModelView v = new ModelView();
@@ -57,14 +55,14 @@ public class TestController {
         return v;
     }
     
-    @Session
     @AppRoute(url = "/testSession")
     public ModelView needSession() {
         ModelView v = new ModelView();
         
+        v.addItem("nom", "haha");
+        v.addItem("nom2", "hahahu");
         
-
-        v.setView("test");
+        v.toggleIsJson();
         
         return v;
     }

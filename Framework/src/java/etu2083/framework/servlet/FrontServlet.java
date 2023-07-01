@@ -280,11 +280,11 @@ public class FrontServlet extends HttpServlet {
     
     protected void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String currentURL = request.getRequestURI().replace(request.getContextPath(), "");   
-        response.getWriter().println(currentURL);
+//        response.getWriter().println(currentURL);
         
         String currentUrlwArgs = currentURL + "?" + request.getQueryString(); 
         
-        response.getWriter().println(mappingUrls.size());
+//        response.getWriter().println(mappingUrls.size());
         // Check si l'url existe dans l'hashmap
         if (mappingUrls.containsKey(currentURL)) {
             try {
@@ -334,6 +334,15 @@ public class FrontServlet extends HttpServlet {
                 ModelView modelView = (ModelView) currentUrlMappedMethod.invoke(urlObjectInstance, argsArray);
                
                 if (modelView != null) {
+                    // Checking if json
+                    if (modelView.isRestAPI()) {
+                        String jsonData = modelView.getJsonData();
+                        response.getWriter().print(jsonData);
+                        
+                        // Stop normal processing
+                        return;
+                    }
+                    
                     // Setting attributes
                     if (modelView.hasData()) {
                         for (Map.Entry<String, Object> data : modelView.getData().entrySet()) {
