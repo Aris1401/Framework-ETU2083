@@ -82,7 +82,10 @@ public class FrontServlet extends HttpServlet {
     }
     
     public void getParametersFromView(HttpServletRequest request, HttpServletResponse response, Object objectUrlInstance) throws ParseException {
-        if (!authSessionInitialized) InitializeAuthSessions(request);
+        if (!authSessionInitialized) {
+            InitializeAuthSessions(request);
+            authSessionInitialized = true;
+        }
         
         // Getting the current parameters values
         Map<String, String[]> currentUrlParamaters = request.getParameterMap();
@@ -227,8 +230,10 @@ public class FrontServlet extends HttpServlet {
         String isConnectedSessionName = getServletContext().getInitParameter("isConnectedSessionName");
         String connectedProfileSessionName = getServletContext().getInitParameter("ConnectedProfileSessionName");
         
+        System.out.println("Session Auth Name:" + isConnectedSessionName + "| Profile: " + connectedProfileSessionName);
         // Checking if it has an auth annotation
-        if (!calledMethod.isAnnotationPresent(Auth.class)) return false;
+        if (!calledMethod.isAnnotationPresent(Auth.class)) return true;
+        System.out.println("Session Auth Name VAlue:" + request.getSession().getAttribute(isConnectedSessionName) + "| Profile Value: " + (String) request.getSession().getAttribute(connectedProfileSessionName));
         
         // Checking if the current client is connected
         if (request.getSession().getAttribute(isConnectedSessionName) == null) return false;
@@ -237,7 +242,8 @@ public class FrontServlet extends HttpServlet {
         Auth authInstance = calledMethod.getAnnotation(Auth.class);
         String profileSessionValue = (String) request.getSession().getAttribute(connectedProfileSessionName);
         
-        if (!authInstance.profil().equals(profileSessionValue)) return false;
+        
+        if (!authInstance.profil().equals("")) if (!authInstance.profil().equals(profileSessionValue)) return false;
         
         return true;
     }
@@ -279,7 +285,11 @@ public class FrontServlet extends HttpServlet {
                 Object[] argsArray = getParametersForMethodFromView(request, response, currentUrlMappedMethod);
                 
                 // Check si le client est courament connecte
-                if (!CheckAuthFunction(request, currentUrlMappedMethod)) throw new Exception("Acces Denied: Not Authentified");
+                if (!CheckAuthFunction(request, currentUrlMappedMethod)) {
+                    response.getWriter().println("Access Denied: Not Authentified");
+                    return;
+                }
+            
                 
                 // Invoke the method in the class
                 ModelView modelView = (ModelView) currentUrlMappedMethod.invoke(urlObjectInstance, argsArray);
@@ -294,12 +304,18 @@ public class FrontServlet extends HttpServlet {
                     
                     // Setting sessions
                     if (modelView.hasSessions()) {
+                        request.getSession().setMaxInactiveInterval(1800);
+                        
                         for (Map.Entry<String,Object> session : modelView.getSession().entrySet()) {
+                            System.out.println("Session:" + session.getKey() + "| Value: " + session.getValue());
                             request.getSession().setAttribute(session.getKey(), session.getValue());
+                            
+                            System.out.println("-------------Session Name VAlue:" + session.getKey() + "| Value: " + request.getSession().getAttribute((String) session.getKey()));
                         }
                     }
 
                     // Dispatching the results  
+                    if (modelView.getView().equals(null) || modelView.getView().equals("")) return; // TODO: Exception
                     request.getRequestDispatcher(modelView.getView()).forward(request, response);
                 } else {
                     response.getWriter().println("An Error Occured");

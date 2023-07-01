@@ -12,13 +12,10 @@
         <title>JSP Page</title>
     </head>
     <body>
-        <form action="huhu" method="POST">
-            <input type="text" name="iii">
-            <input type="date" name="date">
+        <form action="login" method="POST">
+            <input type="text" name="nom">
+            <input type="text" name="pass">
             
-            <input type="checkbox" name="haha[]" value="1">
-            <input type="checkbox" name="haha[]" value="2">
-            <input type="checkbox" name="haha[]" value="3">
             
             <input type="submit" value="Valider">
         </form>
