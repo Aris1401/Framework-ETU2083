@@ -83,13 +83,7 @@ public class FrontServlet extends HttpServlet {
                     currentObjectField.set(objectUrlInstance, arrayParam);
                 } else {
                     if (fieldType == FileUpload.class) {
-                        Part part = request.getPart(currentObjectField.getName());
-                        
-                        FileUpload f = new FileUpload();
-                        f.setName(part.getSubmittedFileName());
-                        f.setFileBytes(getBytesFromInputStream(part.getInputStream()));
-                        
-                        currentObjectField.set(objectUrlInstance, f);
+                        //.....
                     } else {
                         // Handle non-array field type
                         String paramValue = paramValues.get(0);
@@ -106,10 +100,6 @@ public class FrontServlet extends HttpServlet {
             } catch (IllegalArgumentException ex) {
                 Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IllegalAccessException ex) {
-                Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (IOException ex) {
-                Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (ServletException ex) {
                 Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
@@ -174,6 +164,22 @@ public class FrontServlet extends HttpServlet {
         return argsArray;
     }
     
+    public void CheckForFileUpload(HttpServletRequest request, Object currentObject) throws IOException, IllegalArgumentException, ServletException, IllegalAccessException {
+        Field[] objectFields = currentObject.getClass().getDeclaredFields();
+        
+        for (Field currentObjectField : objectFields) {
+            if (currentObjectField.getType() != FileUpload.class) continue;
+            
+            Part part = request.getPart(currentObjectField.getName());
+
+            FileUpload f = new FileUpload();
+            f.setName(part.getSubmittedFileName());
+            f.setFileBytes(getBytesFromInputStream(part.getInputStream()));
+
+            currentObjectField.set(currentObject, f);
+        }
+    }
+    
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         String currentURL = request.getRequestURI().replace(request.getContextPath(), "");   
@@ -207,6 +213,9 @@ public class FrontServlet extends HttpServlet {
                 }
 
                 if (currentUrlMappedMethod == null) return; // TODO: Changer en exception
+                
+                // Checking for file uploads
+                CheckForFileUpload(request, urlObjectInstance);
                 
                 // Setting the parameters argumets
                 Object[] argsArray = getParametersForMethodFromView(request, response, currentUrlMappedMethod);
